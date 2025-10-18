@@ -73,18 +73,18 @@ namespace ProxyCollector
             _ = ParseNewProxies();
         }
 
-        private async void ProxyUpdateTimer_Tick(object? sender, EventArgs e)
+        private void ProxyUpdateTimer_Tick(object? sender, EventArgs e)
         {
             LogAction("Автоматическое обновление списка прокси с сайтов...");
-            await RefreshProxies();
+            _ = Task.Run(async () => await RefreshProxies());
         }
 
-        private async void ProxyCheckTimer_Tick(object? sender, EventArgs e)
+        private void ProxyCheckTimer_Tick(object? sender, EventArgs e)
         {
             if (_allProxies.Any())
             {
                 LogAction($"Проверка доступности {_allProxies.Count} прокси...");
-                await CheckAllProxies();
+                _ = Task.Run(async () => await CheckAllProxies());
             }
         }
 
@@ -594,7 +594,7 @@ namespace ProxyCollector
             LogAction("Форма загружена");
         }
 
-        private void BtnExport_Click(object sender, EventArgs e)
+        private async void BtnExport_Click(object sender, EventArgs e)
         {
             try
             {
@@ -606,7 +606,7 @@ namespace ProxyCollector
 
                 if (dialog.ShowDialog() == DialogResult.OK)
                 {
-                    _proxyStorage.SaveProxiesAsync(_allProxies).Wait();
+                    await _proxyStorage.SaveProxiesAsync(_allProxies);
                     LogAction($"Прокси экспортированы в {dialog.FileName}");
                     MessageBox.Show("Прокси успешно экспортированы", "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }

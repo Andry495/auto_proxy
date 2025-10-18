@@ -98,8 +98,8 @@ namespace ProxyCollector
             this.AutoScaleMode = AutoScaleMode.Font;
             this.ClientSize = new Size(1400, 700);
             this.Controls.Add(this.menuStrip);
-            this.Controls.Add(this.dataGridViewProxies);
             this.Controls.Add(this.panelLog);
+            this.Controls.Add(this.dataGridViewProxies);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "Proxy Collector";
@@ -277,21 +277,24 @@ namespace ProxyCollector
             this.panelLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             this.panelLog.BorderStyle = BorderStyle.FixedSingle;
             this.panelLog.BackColor = Color.LightBlue;
+            this.panelLog.Visible = true;
             this.panelLog.Location = new Point(1010, 25);
             this.panelLog.Size = new Size(380, 655);
             this.panelLog.Padding = new Padding(5);
             this.panelLog.Controls.Add(this.lblActionLog);
             this.panelLog.Controls.Add(this.txtActionLog);
             this.panelLog.Controls.Add(this.btnClearLog);
+            this.panelLog.BringToFront();
 
             // Label Action Log
             this.lblActionLog.Location = new Point(10, 10);
             this.lblActionLog.Name = "lblActionLog";
             this.lblActionLog.Size = new Size(380, 20);
             this.lblActionLog.Text = "Журнал действий:";
-            this.lblActionLog.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
+            this.lblActionLog.Font = new Font("Microsoft Sans Serif", 10F, FontStyle.Bold);
             this.lblActionLog.ForeColor = Color.DarkBlue;
             this.lblActionLog.BackColor = Color.LightBlue;
+            this.lblActionLog.Visible = true;
 
             // TextBox Action Log
             this.txtActionLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -301,6 +304,7 @@ namespace ProxyCollector
             this.txtActionLog.Multiline = true;
             this.txtActionLog.ScrollBars = ScrollBars.Vertical;
             this.txtActionLog.ReadOnly = true;
+            this.txtActionLog.Visible = true;
             this.txtActionLog.Font = new Font("Consolas", 9F);
 
             // Button Clear Log

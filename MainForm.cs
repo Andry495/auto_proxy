@@ -135,12 +135,12 @@ namespace ProxyCollector
             this.dataGridViewProxies.AllowUserToDeleteRows = false;
             this.dataGridViewProxies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
             this.dataGridViewProxies.ColumnHeadersHeight = 35;
-            this.dataGridViewProxies.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            this.dataGridViewProxies.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             this.dataGridViewProxies.Location = new Point(0, 25);
             this.dataGridViewProxies.Name = "dataGridViewProxies";
             this.dataGridViewProxies.ReadOnly = true;
             this.dataGridViewProxies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewProxies.Size = new Size(1000, 655);
+            this.dataGridViewProxies.Size = new Size(800, 655);
             this.dataGridViewProxies.TabIndex = 0;
             this.dataGridViewProxies.RowHeadersVisible = false;
             this.dataGridViewProxies.BackgroundColor = Color.White;
@@ -284,9 +284,10 @@ namespace ProxyCollector
             this.panelLog = new Panel();
             this.panelLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             this.panelLog.BorderStyle = BorderStyle.Fixed3D;
-            this.panelLog.BackColor = Color.Yellow;
+            this.panelLog.BackColor = Color.Red;
             this.panelLog.Visible = true;
-            this.panelLog.Location = new Point(1010, 25);
+            this.panelLog.BringToFront();
+            this.panelLog.Location = new Point(810, 25);
             this.panelLog.Size = new Size(380, 655);
             this.panelLog.Padding = new Padding(5);
             this.panelLog.Controls.Add(this.lblActionLog);
@@ -324,6 +325,12 @@ namespace ProxyCollector
             this.btnClearLog.Click += BtnClearLog_Click;
 
             // Контролы уже добавлены напрямую в MainForm
+            
+            // Принудительно обновляем панель логов
+            this.panelLog.BringToFront();
+            this.panelLog.Refresh();
+            this.panelLog.Invalidate();
+            this.panelLog.Update();
 
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -38,9 +38,6 @@ namespace ProxyCollector
             _allProxies = new List<ProxyServer>();
             _actionLogs = new List<string>();
 
-            // Загрузка настроек
-            LoadSettings();
-
             // Настройка таймеров
             _refreshTimer = new System.Windows.Forms.Timer();
             _refreshTimer.Interval = _settingsManager.GetIntSetting("RefreshInterval", 30) * 1000; // секунды в миллисекунды
@@ -56,6 +53,9 @@ namespace ProxyCollector
             
             // Добавляем тестовые данные для проверки отображения
             AddTestData();
+            
+            // Загружаем настройки после инициализации всех контролов
+            LoadSettings();
             
             LoadProxies();
         }
@@ -99,7 +99,8 @@ namespace ProxyCollector
             this.ClientSize = new Size(1400, 700);
             this.Controls.Add(this.menuStrip);
             this.Controls.Add(this.panelControls);
-            this.Controls.Add(this.tableLayoutPanel);
+            this.Controls.Add(this.dataGridViewProxies);
+            this.Controls.Add(this.panelLog);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "Proxy Collector";
@@ -126,13 +127,13 @@ namespace ProxyCollector
             this.dataGridViewProxies.AllowUserToAddRows = false;
             this.dataGridViewProxies.AllowUserToDeleteRows = false;
             this.dataGridViewProxies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
-            this.dataGridViewProxies.ColumnHeadersHeight = 30;
-            this.dataGridViewProxies.Dock = DockStyle.Fill;
-            this.dataGridViewProxies.Location = new Point(0, 0);
+            this.dataGridViewProxies.ColumnHeadersHeight = 35;
+            this.dataGridViewProxies.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            this.dataGridViewProxies.Location = new Point(0, 200);
             this.dataGridViewProxies.Name = "dataGridViewProxies";
             this.dataGridViewProxies.ReadOnly = true;
             this.dataGridViewProxies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewProxies.Size = new Size(1000, 500);
+            this.dataGridViewProxies.Size = new Size(980, 480);
             this.dataGridViewProxies.TabIndex = 0;
             this.dataGridViewProxies.RowHeadersVisible = false;
             this.dataGridViewProxies.BackgroundColor = Color.White;
@@ -143,7 +144,6 @@ namespace ProxyCollector
             this.dataGridViewProxies.ColumnHeadersDefaultCellStyle.BackColor = Color.LightBlue;
             this.dataGridViewProxies.ColumnHeadersDefaultCellStyle.ForeColor = Color.DarkBlue;
             this.dataGridViewProxies.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
-            this.dataGridViewProxies.Margin = new Padding(0, 0, 5, 0);
 
             // Panel Controls
             this.panelControls = new Panel();
@@ -275,10 +275,11 @@ namespace ProxyCollector
 
             // Panel Log
             this.panelLog = new Panel();
-            this.panelLog.Dock = DockStyle.Fill;
+            this.panelLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             this.panelLog.BorderStyle = BorderStyle.FixedSingle;
             this.panelLog.BackColor = Color.LightGray;
-            this.panelLog.Margin = new Padding(5, 0, 0, 0);
+            this.panelLog.Location = new Point(990, 200);
+            this.panelLog.Size = new Size(400, 480);
             this.panelLog.Padding = new Padding(5);
             this.panelLog.Controls.Add(this.lblActionLog);
             this.panelLog.Controls.Add(this.txtActionLog);
@@ -311,9 +312,7 @@ namespace ProxyCollector
             this.btnClearLog.Text = "Очистить лог";
             this.btnClearLog.Click += BtnClearLog_Click;
 
-            // Добавляем контролы в TableLayoutPanel после их инициализации
-            this.tableLayoutPanel.Controls.Add(this.dataGridViewProxies, 0, 0);
-            this.tableLayoutPanel.Controls.Add(this.panelLog, 1, 0);
+            // Контролы уже добавлены напрямую в MainForm
 
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -382,12 +381,20 @@ namespace ProxyCollector
             try
             {
                 // Загружаем настройки автообновления
-                autoRefreshToolStripMenuItem.Checked = _settingsManager.GetBoolSetting("AutoRefresh", false);
-                _refreshTimer.Enabled = autoRefreshToolStripMenuItem.Checked;
+                var autoRefresh = _settingsManager.GetBoolSetting("AutoRefresh", false);
+                if (autoRefreshToolStripMenuItem != null)
+                {
+                    autoRefreshToolStripMenuItem.Checked = autoRefresh;
+                    _refreshTimer.Enabled = autoRefresh;
+                }
 
                 // Загружаем настройки фонового режима
-                backgroundModeToolStripMenuItem.Checked = _settingsManager.GetBoolSetting("BackgroundMode", false);
-                _backgroundTimer.Enabled = backgroundModeToolStripMenuItem.Checked;
+                var backgroundMode = _settingsManager.GetBoolSetting("BackgroundMode", false);
+                if (backgroundModeToolStripMenuItem != null)
+                {
+                    backgroundModeToolStripMenuItem.Checked = backgroundMode;
+                    _backgroundTimer.Enabled = backgroundMode;
+                }
 
                 // Загружаем настройки минимизации в трей
                 var minimizeToTray = _settingsManager.GetBoolSetting("MinimizeToTray", true);

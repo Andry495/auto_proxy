@@ -22,6 +22,8 @@ namespace ProxyCollector
         private List<ProxyServer> _allProxies;
         private bool _isMinimizedToTray;
         private NotifyIcon _trayIcon;
+        private readonly List<string> _actionLogs;
+        private const int MaxLogEntries = 200;
 
         public MainForm()
         {
@@ -31,6 +33,7 @@ namespace ProxyCollector
             _proxyChecker = new ProxyChecker();
             _proxyStorage = new ProxyStorage();
             _allProxies = new List<ProxyServer>();
+            _actionLogs = new List<string>();
 
             // Настройка таймеров
             _refreshTimer = new System.Windows.Forms.Timer();
@@ -43,6 +46,7 @@ namespace ProxyCollector
 
             SetupTrayIcon();
             InitializeDataGridView();
+            LogAction("Программа запущена");
             LoadProxies();
         }
 
@@ -63,6 +67,9 @@ namespace ProxyCollector
             this.txtFilterIP = new TextBox();
             this.chkOnlyAvailable = new CheckBox();
             this.btnClearFilters = new Button();
+            this.txtActionLog = new TextBox();
+            this.lblActionLog = new Label();
+            this.btnClearLog = new Button();
             this.menuStrip = new MenuStrip();
             this.fileToolStripMenuItem = new ToolStripMenuItem();
             this.exportToolStripMenuItem = new ToolStripMenuItem();
@@ -78,9 +85,10 @@ namespace ProxyCollector
             // MainForm
             this.AutoScaleDimensions = new SizeF(8F, 16F);
             this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(1200, 600);
+            this.ClientSize = new Size(1400, 700);
             this.Controls.Add(this.dataGridViewProxies);
             this.Controls.Add(this.panelControls);
+            this.Controls.Add(this.panelLog);
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
@@ -97,7 +105,7 @@ namespace ProxyCollector
             this.dataGridViewProxies.Name = "dataGridViewProxies";
             this.dataGridViewProxies.ReadOnly = true;
             this.dataGridViewProxies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewProxies.Size = new Size(1200, 400);
+            this.dataGridViewProxies.Size = new Size(1000, 500);
             this.dataGridViewProxies.TabIndex = 0;
 
             // Panel Controls
@@ -228,6 +236,36 @@ namespace ProxyCollector
             this.aboutToolStripMenuItem.Text = "О программе";
             this.aboutToolStripMenuItem.Click += AboutToolStripMenuItem_Click;
 
+            // Panel Log
+            this.panelLog = new Panel();
+            this.panelLog.Dock = DockStyle.Right;
+            this.panelLog.Width = 400;
+            this.panelLog.Controls.Add(this.lblActionLog);
+            this.panelLog.Controls.Add(this.txtActionLog);
+            this.panelLog.Controls.Add(this.btnClearLog);
+
+            // Label Action Log
+            this.lblActionLog.Location = new Point(10, 10);
+            this.lblActionLog.Name = "lblActionLog";
+            this.lblActionLog.Size = new Size(380, 20);
+            this.lblActionLog.Text = "Журнал действий:";
+
+            // TextBox Action Log
+            this.txtActionLog.Location = new Point(10, 35);
+            this.txtActionLog.Name = "txtActionLog";
+            this.txtActionLog.Size = new Size(380, 600);
+            this.txtActionLog.Multiline = true;
+            this.txtActionLog.ScrollBars = ScrollBars.Vertical;
+            this.txtActionLog.ReadOnly = true;
+            this.txtActionLog.Font = new Font("Consolas", 9F);
+
+            // Button Clear Log
+            this.btnClearLog.Location = new Point(10, 640);
+            this.btnClearLog.Name = "btnClearLog";
+            this.btnClearLog.Size = new Size(100, 25);
+            this.btnClearLog.Text = "Очистить лог";
+            this.btnClearLog.Click += BtnClearLog_Click;
+
             this.ResumeLayout(false);
             this.PerformLayout();
         }
@@ -274,18 +312,62 @@ namespace ProxyCollector
             _trayIcon.DoubleClick += (s, e) => ShowFromTray();
         }
 
+        private void LogAction(string message)
+        {
+            var timestamp = DateTime.Now.ToString("HH:mm:ss");
+            var logEntry = $"[{timestamp}] {message}";
+            
+            _actionLogs.Add(logEntry);
+            
+            // Ограничиваем количество записей
+            if (_actionLogs.Count > MaxLogEntries)
+            {
+                _actionLogs.RemoveAt(0);
+            }
+            
+            // Обновляем UI в главном потоке
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => UpdateLogDisplay()));
+            }
+            else
+            {
+                UpdateLogDisplay();
+            }
+        }
+
+        private void UpdateLogDisplay()
+        {
+            if (txtActionLog != null)
+            {
+                txtActionLog.Text = string.Join(Environment.NewLine, _actionLogs);
+                txtActionLog.SelectionStart = txtActionLog.Text.Length;
+                txtActionLog.ScrollToCaret();
+            }
+        }
+
+        private void BtnClearLog_Click(object sender, EventArgs e)
+        {
+            _actionLogs.Clear();
+            UpdateLogDisplay();
+            LogAction("Журнал очищен");
+        }
+
         private async void LoadProxies()
         {
             try
             {
+                LogAction("Начало загрузки прокси из файла...");
                 lblStatus.Text = "Загрузка прокси...";
                 _allProxies = await _proxyStorage.LoadProxiesAsync();
                 UpdateDisplay();
                 UpdateStatistics();
                 lblStatus.Text = $"Загружено {_allProxies.Count} прокси";
+                LogAction($"Загружено {_allProxies.Count} прокси из файла");
             }
             catch (Exception ex)
             {
+                LogAction($"Ошибка при загрузке прокси: {ex.Message}");
                 MessageBox.Show($"Ошибка при загрузке прокси: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lblStatus.Text = "Ошибка загрузки";
             }
@@ -397,6 +479,7 @@ namespace ProxyCollector
         {
             try
             {
+                LogAction("Начало обновления прокси...");
                 progressBar.Visible = true;
                 progressBar.Style = ProgressBarStyle.Marquee;
                 lblStatus.Text = "Обновление прокси...";
@@ -404,7 +487,11 @@ namespace ProxyCollector
 
                 await Task.Run(async () =>
                 {
+                    LogAction("Парсинг прокси с сайтов...");
                     var newProxies = await _proxyParser.ParseAllSourcesAsync();
+                    LogAction($"Найдено {newProxies.Count} новых прокси");
+                    
+                    LogAction("Проверка доступности прокси...");
                     var checkedProxies = await _proxyChecker.CheckProxiesAsync(newProxies);
                     
                     // Объединяем с существующими прокси
@@ -429,13 +516,16 @@ namespace ProxyCollector
                     }
                 });
 
+                LogAction("Сохранение прокси в файл...");
                 await _proxyStorage.SaveProxiesAsync(_allProxies);
                 UpdateDisplay();
                 UpdateStatistics();
                 lblStatus.Text = "Прокси обновлены";
+                LogAction($"Обновление завершено. Всего прокси: {_allProxies.Count}");
             }
             catch (Exception ex)
             {
+                LogAction($"Ошибка при обновлении прокси: {ex.Message}");
                 MessageBox.Show($"Ошибка при обновлении прокси: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lblStatus.Text = "Ошибка обновления";
             }
@@ -450,27 +540,37 @@ namespace ProxyCollector
         {
             try
             {
+                LogAction("Начало парсинга новых прокси...");
                 progressBar.Visible = true;
                 progressBar.Style = ProgressBarStyle.Marquee;
                 lblStatus.Text = "Парсинг новых прокси...";
                 btnParseNew.Enabled = false;
 
+                LogAction("Парсинг прокси с сайтов...");
                 var newProxies = await _proxyParser.ParseAllSourcesAsync();
+                LogAction($"Найдено {newProxies.Count} прокси с сайтов");
+                
+                LogAction("Проверка доступности новых прокси...");
                 var checkedProxies = await _proxyChecker.CheckProxiesAsync(newProxies);
                 
                 // Добавляем только новые прокси
                 var existingKeys = _allProxies.Select(p => $"{p.IpAddress}:{p.Port}").ToHashSet();
                 var uniqueNewProxies = checkedProxies.Where(p => !existingKeys.Contains($"{p.IpAddress}:{p.Port}")).ToList();
                 
+                LogAction($"Добавление {uniqueNewProxies.Count} уникальных новых прокси");
                 _allProxies.AddRange(uniqueNewProxies);
+                
+                LogAction("Сохранение обновленного списка прокси...");
                 await _proxyStorage.SaveProxiesAsync(_allProxies);
                 
                 UpdateDisplay();
                 UpdateStatistics();
                 lblStatus.Text = $"Добавлено {uniqueNewProxies.Count} новых прокси";
+                LogAction($"Парсинг завершен. Добавлено {uniqueNewProxies.Count} новых прокси");
             }
             catch (Exception ex)
             {
+                LogAction($"Ошибка при парсинге прокси: {ex.Message}");
                 MessageBox.Show($"Ошибка при парсинге прокси: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lblStatus.Text = "Ошибка парсинга";
             }
@@ -485,6 +585,7 @@ namespace ProxyCollector
         {
             try
             {
+                LogAction($"Начало проверки {_allProxies.Count} прокси...");
                 progressBar.Visible = true;
                 progressBar.Style = ProgressBarStyle.Continuous;
                 progressBar.Maximum = _allProxies.Count;
@@ -498,7 +599,13 @@ namespace ProxyCollector
                     lblStatus.Text = $"Проверка: {p.CurrentProxy} ({p.Completed}/{p.Total})";
                 });
 
+                LogAction("Проверка доступности всех прокси...");
                 _allProxies = await _proxyChecker.CheckProxiesAsync(_allProxies, progress);
+                
+                var availableCount = _allProxies.Count(p => p.IsAvailable);
+                LogAction($"Проверка завершена. Доступных: {availableCount} из {_allProxies.Count}");
+                
+                LogAction("Сохранение результатов проверки...");
                 await _proxyStorage.SaveProxiesAsync(_allProxies);
                 
                 UpdateDisplay();
@@ -507,6 +614,7 @@ namespace ProxyCollector
             }
             catch (Exception ex)
             {
+                LogAction($"Ошибка при проверке прокси: {ex.Message}");
                 MessageBox.Show($"Ошибка при проверке прокси: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 lblStatus.Text = "Ошибка проверки";
             }
@@ -519,6 +627,7 @@ namespace ProxyCollector
 
         private void ExportProxies()
         {
+            LogAction("Начало экспорта прокси...");
             using var saveDialog = new SaveFileDialog
             {
                 Filter = "Текстовые файлы (*.txt)|*.txt|CSV файлы (*.csv)|*.csv|JSON файлы (*.json)|*.json",
@@ -537,14 +646,21 @@ namespace ProxyCollector
                     };
 
                     var filteredProxies = GetFilteredProxies();
+                    LogAction($"Экспорт {filteredProxies.Count} прокси в формат {format}...");
                     _proxyStorage.ExportProxiesAsync(filteredProxies, saveDialog.FileName, format).Wait();
                     
+                    LogAction($"Экспорт завершен: {saveDialog.FileName}");
                     MessageBox.Show($"Прокси экспортированы в файл: {saveDialog.FileName}", "Экспорт", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
+                    LogAction($"Ошибка при экспорте: {ex.Message}");
                     MessageBox.Show($"Ошибка при экспорте: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+            }
+            else
+            {
+                LogAction("Экспорт отменен пользователем");
             }
         }
 
@@ -630,6 +746,10 @@ namespace ProxyCollector
         private TextBox txtFilterIP;
         private CheckBox chkOnlyAvailable;
         private Button btnClearFilters;
+        private Panel panelLog;
+        private TextBox txtActionLog;
+        private Label lblActionLog;
+        private Button btnClearLog;
         private MenuStrip menuStrip;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem exportToolStripMenuItem;

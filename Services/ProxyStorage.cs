@@ -82,12 +82,20 @@ namespace ProxyCollector.Services
                 if (File.Exists(jsonPath))
                 {
                     var json = await File.ReadAllTextAsync(jsonPath);
-                    proxies = JsonSerializer.Deserialize<List<ProxyServer>>(json) ?? new List<ProxyServer>();
+                    if (!string.IsNullOrWhiteSpace(json))
+                    {
+                        proxies = JsonSerializer.Deserialize<List<ProxyServer>>(json) ?? new List<ProxyServer>();
+                    }
                 }
                 else if (File.Exists(_storagePath))
                 {
                     // Если JSON нет, загружаем из текстового файла
                     proxies = await LoadFromTextAsync();
+                }
+                else
+                {
+                    // Если файлы не существуют, создаем пустой список
+                    proxies = new List<ProxyServer>();
                 }
             }
             catch (Exception ex)
@@ -105,6 +113,11 @@ namespace ProxyCollector.Services
                         // Если и резервная копия не работает, возвращаем пустой список
                         proxies = new List<ProxyServer>();
                     }
+                }
+                else
+                {
+                    // Если резервной копии нет, возвращаем пустой список
+                    proxies = new List<ProxyServer>();
                 }
             }
 

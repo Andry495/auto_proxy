@@ -87,9 +87,9 @@ namespace ProxyCollector
             this.AutoScaleDimensions = new SizeF(8F, 16F);
             this.AutoScaleMode = AutoScaleMode.Font;
             this.ClientSize = new Size(1400, 700);
-            this.Controls.Add(this.splitContainer);
-            this.Controls.Add(this.panelControls);
             this.Controls.Add(this.menuStrip);
+            this.Controls.Add(this.panelControls);
+            this.Controls.Add(this.splitContainer);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "Proxy Collector";
@@ -106,6 +106,9 @@ namespace ProxyCollector
             this.splitContainer.Size = new Size(1400, 500);
             this.splitContainer.SplitterDistance = 1000;
             this.splitContainer.TabIndex = 0;
+            this.splitContainer.SplitterWidth = 5;
+            this.splitContainer.Panel1MinSize = 300;
+            this.splitContainer.Panel2MinSize = 300;
 
             // DataGridView
             this.dataGridViewProxies.AllowUserToAddRows = false;
@@ -250,6 +253,8 @@ namespace ProxyCollector
             // Panel Log
             this.panelLog = new Panel();
             this.panelLog.Dock = DockStyle.Fill;
+            this.panelLog.BorderStyle = BorderStyle.FixedSingle;
+            this.panelLog.BackColor = Color.LightGray;
             this.panelLog.Controls.Add(this.lblActionLog);
             this.panelLog.Controls.Add(this.txtActionLog);
             this.panelLog.Controls.Add(this.btnClearLog);

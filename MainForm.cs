@@ -601,6 +601,28 @@ namespace ProxyCollector
             SaveSettings();
         }
 
+        private void SettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                using (var settingsForm = new SettingsForm(_settingsManager))
+                {
+                    if (settingsForm.ShowDialog() == DialogResult.OK)
+                    {
+                        settingsForm.SaveSettings();
+                        LoadSettings();
+                        LogAction("Настройки обновлены");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при открытии настроек: {ex.Message}");
+                MessageBox.Show($"Ошибка при открытии настроек: {ex.Message}", "Ошибка", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MessageBox.Show(

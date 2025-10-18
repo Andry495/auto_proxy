@@ -65,6 +65,11 @@ namespace ProxyCollector
             // Добавляем тестовое сообщение в панель логов
             LogAction("Панель логов инициализирована");
             
+            // Дополнительная проверка панели логов
+            this.panelLog.BringToFront();
+            this.panelLog.Show();
+            this.panelLog.Visible = true;
+            
             LoadProxies();
         }
 
@@ -113,6 +118,7 @@ namespace ProxyCollector
             this.Text = "Proxy Collector";
             this.WindowState = FormWindowState.Normal;
             this.Resize += MainForm_Resize;
+            this.Load += MainForm_Load;
 
             // TableLayoutPanel
             this.tableLayoutPanel.Dock = DockStyle.Fill;
@@ -920,5 +926,18 @@ namespace ProxyCollector
         private ToolStripMenuItem helpToolStripMenuItem;
         private ToolStripMenuItem aboutToolStripMenuItem;
         private IContainer components;
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            // Принудительно обновляем панель логов при загрузке формы
+            this.panelLog.BringToFront();
+            this.panelLog.Show();
+            this.panelLog.Visible = true;
+            this.panelLog.Refresh();
+            this.panelLog.Invalidate();
+            this.panelLog.Update();
+            
+            LogAction("Форма загружена, панель логов принудительно обновлена");
+        }
     }
 }

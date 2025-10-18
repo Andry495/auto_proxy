@@ -217,6 +217,60 @@ namespace ProxyCollector
             dataGridViewProxies.DataSource = sortedProxies;
         }
 
+        private void DataGridViewProxies_ColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            try
+            {
+                var column = dataGridViewProxies.Columns[e.ColumnIndex];
+                var currentData = (List<ProxyServer>)dataGridViewProxies.DataSource;
+                
+                if (currentData == null) return;
+
+                List<ProxyServer> sortedData;
+
+                switch (column.Name)
+                {
+                    case "IsAvailable":
+                        sortedData = currentData.OrderByDescending(p => p.IsAvailable).ThenBy(p => p.ResponseTime).ToList();
+                        break;
+                    case "ResponseTime":
+                        sortedData = currentData.OrderBy(p => p.ResponseTime).ThenByDescending(p => p.IsAvailable).ToList();
+                        break;
+                    case "IpAddress":
+                        sortedData = currentData.OrderBy(p => p.IpAddress).ToList();
+                        break;
+                    case "Port":
+                        sortedData = currentData.OrderBy(p => p.Port).ToList();
+                        break;
+                    case "Type":
+                        sortedData = currentData.OrderBy(p => p.Type).ToList();
+                        break;
+                    case "Country":
+                        sortedData = currentData.OrderBy(p => p.Country).ToList();
+                        break;
+                    case "LastChecked":
+                        sortedData = currentData.OrderByDescending(p => p.LastChecked).ToList();
+                        break;
+                    case "Source":
+                        sortedData = currentData.OrderBy(p => p.Source).ToList();
+                        break;
+                    default:
+                        // По умолчанию сортируем по доступности и скорости
+                        sortedData = currentData.OrderByDescending(p => p.IsAvailable).ThenBy(p => p.ResponseTime).ToList();
+                        break;
+                }
+
+                dataGridViewProxies.DataSource = null;
+                dataGridViewProxies.DataSource = sortedData;
+                
+                LogAction($"Сортировка по колонке: {column.HeaderText}");
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при сортировке: {ex.Message}");
+            }
+        }
+
         private void LogAction(string message)
         {
             var timestamp = DateTime.Now.ToString("HH:mm:ss");

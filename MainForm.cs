@@ -22,16 +22,18 @@ namespace ProxyCollector
         private bool _isMinimizedToTray = false;
         private System.Windows.Forms.Timer _refreshTimer;
         private System.Windows.Forms.Timer _backgroundTimer;
+        private System.Windows.Forms.Timer _proxyUpdateTimer;
+        private System.Windows.Forms.Timer _proxyCheckTimer;
 
         public MainForm()
         {
             InitializeComponent();
             
+            _settingsManager = new SettingsManager();
             _proxyParser = new ProxyParser();
             _proxyParser.LogMessage += (message) => LogAction(message);
-            _proxyChecker = new ProxyChecker();
+            _proxyChecker = new ProxyChecker(_settingsManager);
             _proxyStorage = new ProxyStorage();
-            _settingsManager = new SettingsManager();
             _allProxies = new List<ProxyServer>();
             _actionLogs = new List<string>();
 
@@ -42,6 +44,16 @@ namespace ProxyCollector
             _backgroundTimer = new System.Windows.Forms.Timer();
             _backgroundTimer.Interval = _settingsManager.GetIntSetting("BackgroundInterval", 300) * 1000;
             _backgroundTimer.Tick += BackgroundTimer_Tick;
+
+            // Таймер для обновления списка прокси с сайтов
+            _proxyUpdateTimer = new System.Windows.Forms.Timer();
+            _proxyUpdateTimer.Interval = _settingsManager.GetIntSetting("ProxyUpdateInterval", 60) * 60 * 1000; // минуты в миллисекунды
+            _proxyUpdateTimer.Tick += ProxyUpdateTimer_Tick;
+
+            // Таймер для проверки доступности прокси
+            _proxyCheckTimer = new System.Windows.Forms.Timer();
+            _proxyCheckTimer.Interval = _settingsManager.GetIntSetting("ProxyCheckInterval", 60) * 1000; // секунды в миллисекунды
+            _proxyCheckTimer.Tick += ProxyCheckTimer_Tick;
 
             SetupTrayIcon();
             InitializeDataGridView();
@@ -59,6 +71,21 @@ namespace ProxyCollector
         private void BackgroundTimer_Tick(object? sender, EventArgs e)
         {
             _ = ParseNewProxies();
+        }
+
+        private async void ProxyUpdateTimer_Tick(object? sender, EventArgs e)
+        {
+            LogAction("Автоматическое обновление списка прокси с сайтов...");
+            await RefreshProxies();
+        }
+
+        private async void ProxyCheckTimer_Tick(object? sender, EventArgs e)
+        {
+            if (_allProxies.Any())
+            {
+                LogAction($"Проверка доступности {_allProxies.Count} прокси...");
+                await CheckAllProxies();
+            }
         }
 
         private void SetupTrayIcon()
@@ -165,7 +192,14 @@ namespace ProxyCollector
                     _backgroundTimer.Enabled = backgroundMode;
                 }
 
+                // Запускаем таймеры для обновления и проверки прокси
+                _proxyUpdateTimer.Enabled = true;
+                _proxyCheckTimer.Enabled = true;
+
                 LogAction("Настройки загружены из файла");
+                LogAction($"Интервал обновления прокси: {_settingsManager.GetIntSetting("ProxyUpdateInterval", 60)} минут");
+                LogAction($"Интервал проверки прокси: {_settingsManager.GetIntSetting("ProxyCheckInterval", 60)} секунд");
+                LogAction($"URL для тестирования: {_settingsManager.GetStringSetting("TestUrl", "https://2ip.ru")}");
             }
             catch (Exception ex)
             {
@@ -411,6 +445,33 @@ namespace ProxyCollector
             catch (Exception ex)
             {
                 LogAction($"Ошибка при парсинге прокси: {ex.Message}");
+            }
+        }
+
+        private async Task CheckAllProxies()
+        {
+            try
+            {
+                var progress = new Progress<ProxyCheckProgress>(progress =>
+                {
+                    if (progress.IsComplete)
+                    {
+                        LogAction($"Проверка завершена. Проверено: {progress.Completed}/{progress.Total}");
+                    }
+                });
+
+                var checkedProxies = await _proxyChecker.CheckProxiesAsync(_allProxies, progress);
+                _allProxies = checkedProxies;
+                
+                await _proxyStorage.SaveProxiesAsync(_allProxies);
+                UpdateDisplay();
+                
+                var availableCount = _allProxies.Count(p => p.IsAvailable);
+                LogAction($"Проверка прокси завершена. Доступно: {availableCount}/{_allProxies.Count}");
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при проверке прокси: {ex.Message}");
             }
         }
 

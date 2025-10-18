@@ -115,7 +115,7 @@ namespace ProxyCollector.Services
         private void SetDefaultSettings()
         {
             // Настройки автообновления
-            SetBoolSetting("AutoRefresh", false);
+            SetBoolSetting("AutoRefresh", true);
             SetIntSetting("RefreshInterval", 30); // секунды
             
             // Настройки фонового режима
@@ -135,6 +135,12 @@ namespace ProxyCollector.Services
             // Настройки экспорта
             SetStringSetting("DefaultExportFormat", "txt");
             SetStringSetting("DefaultExportPath", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "export"));
+            
+            // Новые настройки для обновления и проверки прокси
+            SetIntSetting("ProxyUpdateInterval", 60); // минуты
+            SetIntSetting("ProxyCheckInterval", 60); // секунды
+            SetStringSetting("TestUrl", "https://2ip.ru");
+            SetIntSetting("TestTimeout", 10); // секунды
         }
 
         public void SetStringSetting(string key, string value)

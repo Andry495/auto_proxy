@@ -12,13 +12,14 @@ namespace ProxyCollector.Services
     {
         private readonly HttpClient _httpClient;
         private readonly SemaphoreSlim _semaphore;
+        private readonly SettingsManager _settingsManager;
         private const int MaxConcurrentChecks = 10;
-        private const int TimeoutSeconds = 10;
 
-        public ProxyChecker()
+        public ProxyChecker(SettingsManager settingsManager)
         {
+            _settingsManager = settingsManager;
             _httpClient = new HttpClient();
-            _httpClient.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
+            _httpClient.Timeout = TimeSpan.FromSeconds(_settingsManager.GetIntSetting("TestTimeout", 10));
             _semaphore = new SemaphoreSlim(MaxConcurrentChecks, MaxConcurrentChecks);
         }
 
@@ -68,6 +69,8 @@ namespace ProxyCollector.Services
         private async Task<ProxyServer> CheckProxyAsync(ProxyServer proxy)
         {
             var startTime = DateTime.Now;
+            var testUrl = _settingsManager.GetStringSetting("TestUrl", "https://2ip.ru");
+            var timeout = _settingsManager.GetIntSetting("TestTimeout", 10);
             
             try
             {
@@ -79,10 +82,10 @@ namespace ProxyCollector.Services
                 };
 
                 using var client = new HttpClient(handler);
-                client.Timeout = TimeSpan.FromSeconds(TimeoutSeconds);
+                client.Timeout = TimeSpan.FromSeconds(timeout);
 
-                // Тестируем подключение к простому HTTP сайту
-                var response = await client.GetAsync("http://httpbin.org/ip");
+                // Тестируем подключение к настроенному URL
+                var response = await client.GetAsync(testUrl);
                 
                 if (response.IsSuccessStatusCode)
                 {

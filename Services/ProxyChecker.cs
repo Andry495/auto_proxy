@@ -54,10 +54,13 @@ namespace ProxyCollector.Services
                     Completed = completedCount,
                     Total = totalCount,
                     CurrentProxy = proxy.FullAddress,
-                    IsComplete = false
+                    IsComplete = false,
+                    Status = "Начало проверки",
+                    ResponseTime = 0,
+                    IsAvailable = false
                 });
 
-                var result = await CheckProxyAsync(proxy);
+                var result = await CheckProxyAsync(proxy, progress, totalCount, completedCount);
                 
                 // Отправляем информацию о завершении проверки
                 progress?.Report(new ProxyCheckProgress
@@ -65,7 +68,10 @@ namespace ProxyCollector.Services
                     Completed = completedCount + 1,
                     Total = totalCount,
                     CurrentProxy = proxy.FullAddress,
-                    IsComplete = completedCount + 1 == totalCount
+                    IsComplete = completedCount + 1 == totalCount,
+                    Status = result.IsAvailable ? "Успешно" : "Недоступен",
+                    ResponseTime = result.ResponseTime,
+                    IsAvailable = result.IsAvailable
                 });
 
                 return result;
@@ -76,7 +82,7 @@ namespace ProxyCollector.Services
             }
         }
 
-        private async Task<ProxyServer> CheckProxyAsync(ProxyServer proxy)
+        private async Task<ProxyServer> CheckProxyAsync(ProxyServer proxy, IProgress<ProxyCheckProgress>? progress, int totalCount, int completedCount)
         {
             var startTime = DateTime.Now;
             var testUrl = _settingsManager.GetStringSetting("TestUrl", "https://2ip.ru");
@@ -84,6 +90,18 @@ namespace ProxyCollector.Services
             
             try
             {
+                // Отправляем информацию о создании прокси
+                progress?.Report(new ProxyCheckProgress
+                {
+                    Completed = completedCount,
+                    Total = totalCount,
+                    CurrentProxy = proxy.FullAddress,
+                    IsComplete = false,
+                    Status = $"Создание {proxy.Type} прокси",
+                    ResponseTime = 0,
+                    IsAvailable = false
+                });
+
                 var webProxy = CreateWebProxy(proxy);
                 var handler = new HttpClientHandler()
                 {
@@ -97,28 +115,80 @@ namespace ProxyCollector.Services
                 // Адаптируем URL для тестирования в зависимости от типа прокси
                 var testUrlToUse = GetTestUrlForProxyType(proxy.Type, testUrl);
                 
+                // Отправляем информацию о начале тестирования
+                progress?.Report(new ProxyCheckProgress
+                {
+                    Completed = completedCount,
+                    Total = totalCount,
+                    CurrentProxy = proxy.FullAddress,
+                    IsComplete = false,
+                    Status = $"Тестирование через {testUrlToUse}",
+                    ResponseTime = 0,
+                    IsAvailable = false
+                });
+                
                 // Тестируем подключение к настроенному URL
                 var response = await client.GetAsync(testUrlToUse);
                 
+                var responseTime = (int)(DateTime.Now - startTime).TotalMilliseconds;
+                
                 if (response.IsSuccessStatusCode)
                 {
-                    var responseTime = (int)(DateTime.Now - startTime).TotalMilliseconds;
                     proxy.IsAvailable = true;
                     proxy.ResponseTime = responseTime;
                     proxy.LastChecked = DateTime.Now;
+                    
+                    // Отправляем информацию об успешном тестировании
+                    progress?.Report(new ProxyCheckProgress
+                    {
+                        Completed = completedCount,
+                        Total = totalCount,
+                        CurrentProxy = proxy.FullAddress,
+                        IsComplete = false,
+                        Status = $"Успешно ({responseTime}мс)",
+                        ResponseTime = responseTime,
+                        IsAvailable = true
+                    });
                 }
                 else
                 {
                     proxy.IsAvailable = false;
                     proxy.ResponseTime = -1;
                     proxy.LastChecked = DateTime.Now;
+                    
+                    // Отправляем информацию о неудачном тестировании
+                    progress?.Report(new ProxyCheckProgress
+                    {
+                        Completed = completedCount,
+                        Total = totalCount,
+                        CurrentProxy = proxy.FullAddress,
+                        IsComplete = false,
+                        Status = $"Ошибка HTTP {response.StatusCode}",
+                        ResponseTime = responseTime,
+                        IsAvailable = false,
+                        ErrorMessage = $"HTTP {response.StatusCode}"
+                    });
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                var responseTime = (int)(DateTime.Now - startTime).TotalMilliseconds;
                 proxy.IsAvailable = false;
                 proxy.ResponseTime = -1;
                 proxy.LastChecked = DateTime.Now;
+                
+                // Отправляем информацию об ошибке
+                progress?.Report(new ProxyCheckProgress
+                {
+                    Completed = completedCount,
+                    Total = totalCount,
+                    CurrentProxy = proxy.FullAddress,
+                    IsComplete = false,
+                    Status = $"Ошибка: {ex.Message}",
+                    ResponseTime = responseTime,
+                    IsAvailable = false,
+                    ErrorMessage = ex.Message
+                });
             }
 
             return proxy;
@@ -190,5 +260,9 @@ namespace ProxyCollector.Services
         public string CurrentProxy { get; set; } = string.Empty;
         public bool IsComplete { get; set; }
         public double ProgressPercentage => Total > 0 ? (double)Completed / Total * 100 : 0;
+        public string Status { get; set; } = string.Empty;
+        public int ResponseTime { get; set; }
+        public bool IsAvailable { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
     }
 }

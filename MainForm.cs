@@ -373,11 +373,13 @@ namespace ProxyCollector
             var timestamp = DateTime.Now.ToString("HH:mm:ss");
             var logEntry = $"[{timestamp}] {message}";
             
-            _actionLogs.Add(logEntry);
+            // Добавляем новую запись в начало списка (сверху)
+            _actionLogs.Insert(0, logEntry);
             
             if (_actionLogs.Count > MaxLogEntries)
             {
-                _actionLogs.RemoveAt(0);
+                // Удаляем старые записи с конца списка
+                _actionLogs.RemoveRange(MaxLogEntries, _actionLogs.Count - MaxLogEntries);
             }
             
             if (InvokeRequired)
@@ -395,7 +397,8 @@ namespace ProxyCollector
             if (txtActionLog != null)
             {
                 txtActionLog.Text = string.Join(Environment.NewLine, _actionLogs);
-                txtActionLog.SelectionStart = txtActionLog.Text.Length;
+                // Прокручиваем к началу (сверху), где находятся новые записи
+                txtActionLog.SelectionStart = 0;
                 txtActionLog.ScrollToCaret();
             }
         }
@@ -458,6 +461,21 @@ namespace ProxyCollector
                     if (!string.IsNullOrEmpty(progress.CurrentProxy))
                     {
                         HighlightCurrentProxy(progress.CurrentProxy);
+                    }
+                    
+                    // Логируем подробную информацию о проверке
+                    if (!string.IsNullOrEmpty(progress.Status))
+                    {
+                        var statusMessage = $"{progress.CurrentProxy}: {progress.Status}";
+                        if (progress.ResponseTime > 0)
+                        {
+                            statusMessage += $" (время: {progress.ResponseTime}мс)";
+                        }
+                        if (!string.IsNullOrEmpty(progress.ErrorMessage))
+                        {
+                            statusMessage += $" - {progress.ErrorMessage}";
+                        }
+                        LogAction(statusMessage);
                     }
                     
                     if (progress.IsComplete)

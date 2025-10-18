@@ -113,7 +113,8 @@ namespace ProxyCollector
             // DataGridView
             this.dataGridViewProxies.AllowUserToAddRows = false;
             this.dataGridViewProxies.AllowUserToDeleteRows = false;
-            this.dataGridViewProxies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridViewProxies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
+            this.dataGridViewProxies.ColumnHeadersHeight = 25;
             this.dataGridViewProxies.Dock = DockStyle.Fill;
             this.dataGridViewProxies.Location = new Point(0, 0);
             this.dataGridViewProxies.Name = "dataGridViewProxies";
@@ -121,6 +122,8 @@ namespace ProxyCollector
             this.dataGridViewProxies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             this.dataGridViewProxies.Size = new Size(1000, 500);
             this.dataGridViewProxies.TabIndex = 0;
+            // AutoSizeColumnsMode будет настроен в InitializeDataGridView
+            this.dataGridViewProxies.RowHeadersVisible = false;
 
             // Panel Controls
             this.panelControls = new Panel();
@@ -306,15 +309,15 @@ namespace ProxyCollector
             dataGridViewProxies.Columns.Add("Source", "Источник");
 
             // Настройка колонок
-            dataGridViewProxies.Columns["IP"].Width = 120;
-            dataGridViewProxies.Columns["Port"].Width = 60;
-            dataGridViewProxies.Columns["Type"].Width = 80;
-            dataGridViewProxies.Columns["Country"].Width = 100;
-            dataGridViewProxies.Columns["Speed"].Width = 100;
-            dataGridViewProxies.Columns["Available"].Width = 80;
-            dataGridViewProxies.Columns["ResponseTime"].Width = 120;
-            dataGridViewProxies.Columns["LastChecked"].Width = 150;
-            dataGridViewProxies.Columns["Source"].Width = 200;
+            dataGridViewProxies.Columns["IP"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewProxies.Columns["Port"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewProxies.Columns["Type"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewProxies.Columns["Country"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewProxies.Columns["Speed"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewProxies.Columns["Available"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewProxies.Columns["ResponseTime"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            dataGridViewProxies.Columns["LastChecked"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+            dataGridViewProxies.Columns["Source"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
         }
 
         private void SetupTrayIcon()

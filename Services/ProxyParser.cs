@@ -18,7 +18,13 @@ namespace ProxyCollector.Services
             "https://hide-my-name.com/proxy-list/",
             "https://proxyscrape.com/free-proxy-list",
             "https://freeproxylist.ru/",
-            "https://free-proxy-list.net/"
+            "https://free-proxy-list.net/",
+            "https://freeproxylist.ru/protocol/https",
+            "https://freeproxylist.ru/protocol/socks",
+            "https://proxyverity.com/free-proxy-list/",
+            "https://ru.proxy-tools.com/proxy",
+            "https://htmlweb.ru/analiz/proxy_list.php",
+            "https://free.geonix.com/ru/"
         };
 
         public ProxyParser()
@@ -85,6 +91,12 @@ namespace ProxyCollector.Services
             
             try
             {
+                // Проверяем, нужна ли пагинация для этого источника
+                if (NeedsPagination(url))
+                {
+                    return await ParseSourceWithPaginationAsync(url);
+                }
+
                 LogMessage?.Invoke($"Загрузка HTML с {url}...");
                 var html = await _httpClient.GetStringAsync(url);
                 LogMessage?.Invoke($"HTML загружен, размер: {html.Length} символов");
@@ -118,6 +130,34 @@ namespace ProxyCollector.Services
                     LogMessage?.Invoke("Парсинг free-proxy-list.net...");
                     var parsedProxies = ParseFreeProxyListNet(doc, url);
                     LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на free-proxy-list.net");
+                    proxies.AddRange(parsedProxies);
+                }
+                else if (url.Contains("proxyverity.com"))
+                {
+                    LogMessage?.Invoke("Парсинг proxyverity.com...");
+                    var parsedProxies = ParseProxyVerity(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на proxyverity.com");
+                    proxies.AddRange(parsedProxies);
+                }
+                else if (url.Contains("proxy-tools.com"))
+                {
+                    LogMessage?.Invoke("Парсинг proxy-tools.com...");
+                    var parsedProxies = ParseProxyTools(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на proxy-tools.com");
+                    proxies.AddRange(parsedProxies);
+                }
+                else if (url.Contains("htmlweb.ru"))
+                {
+                    LogMessage?.Invoke("Парсинг htmlweb.ru...");
+                    var parsedProxies = ParseHtmlWeb(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на htmlweb.ru");
+                    proxies.AddRange(parsedProxies);
+                }
+                else if (url.Contains("geonix.com"))
+                {
+                    LogMessage?.Invoke("Парсинг geonix.com...");
+                    var parsedProxies = ParseGeonix(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на geonix.com");
                     proxies.AddRange(parsedProxies);
                 }
             }
@@ -319,6 +359,285 @@ namespace ProxyCollector.Services
                 return ProxyType.HTTPS;
             else
                 return ProxyType.HTTP;
+        }
+
+        // Методы для поддержки пагинации
+        private bool NeedsPagination(string url)
+        {
+            return url.Contains("freeproxylist.ru") || 
+                   url.Contains("proxyverity.com") || 
+                   url.Contains("proxy-tools.com") ||
+                   url.Contains("htmlweb.ru") ||
+                   url.Contains("geonix.com");
+        }
+
+        private async Task<List<ProxyServer>> ParseSourceWithPaginationAsync(string url)
+        {
+            var allProxies = new List<ProxyServer>();
+            var maxPages = 5; // Ограничиваем количество страниц для избежания долгого парсинга
+            
+            try
+            {
+                LogMessage?.Invoke($"Парсинг с пагинацией: {url}");
+                
+                for (int page = 1; page <= maxPages; page++)
+                {
+                    try
+                    {
+                        var pageUrl = GetPageUrl(url, page);
+                        LogMessage?.Invoke($"Страница {page}: {pageUrl}");
+                        
+                        var html = await _httpClient.GetStringAsync(pageUrl);
+                        var doc = new HtmlAgilityPack.HtmlDocument();
+                        doc.LoadHtml(html);
+                        
+                        var pageProxies = new List<ProxyServer>();
+                        
+                        if (url.Contains("freeproxylist.ru"))
+                        {
+                            pageProxies = ParseFreeProxyListRu(doc, pageUrl);
+                        }
+                        else if (url.Contains("proxyverity.com"))
+                        {
+                            pageProxies = ParseProxyVerity(doc, pageUrl);
+                        }
+                        else if (url.Contains("proxy-tools.com"))
+                        {
+                            pageProxies = ParseProxyTools(doc, pageUrl);
+                        }
+                        else if (url.Contains("htmlweb.ru"))
+                        {
+                            pageProxies = ParseHtmlWeb(doc, pageUrl);
+                        }
+                        else if (url.Contains("geonix.com"))
+                        {
+                            pageProxies = ParseGeonix(doc, pageUrl);
+                        }
+                        
+                        if (pageProxies.Count == 0)
+                        {
+                            LogMessage?.Invoke($"Страница {page}: прокси не найдены, завершение парсинга");
+                            break;
+                        }
+                        
+                        allProxies.AddRange(pageProxies);
+                        LogMessage?.Invoke($"Страница {page}: найдено {pageProxies.Count} прокси");
+                        
+                        // Небольшая задержка между запросами
+                        await Task.Delay(1000);
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMessage?.Invoke($"Ошибка на странице {page}: {ex.Message}");
+                        break;
+                    }
+                }
+                
+                LogMessage?.Invoke($"Парсинг с пагинацией завершен. Всего найдено: {allProxies.Count} прокси");
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"Ошибка при парсинге с пагинацией {url}: {ex.Message}");
+            }
+            
+            return allProxies;
+        }
+
+        private string GetPageUrl(string baseUrl, int page)
+        {
+            if (baseUrl.Contains("freeproxylist.ru"))
+            {
+                return $"{baseUrl}?page={page}";
+            }
+            else if (baseUrl.Contains("proxyverity.com"))
+            {
+                return $"{baseUrl}?page={page}";
+            }
+            else if (baseUrl.Contains("proxy-tools.com"))
+            {
+                return $"{baseUrl}?page={page}";
+            }
+            else if (baseUrl.Contains("htmlweb.ru"))
+            {
+                return $"{baseUrl}?page={page}";
+            }
+            else if (baseUrl.Contains("geonix.com"))
+            {
+                return $"{baseUrl}?page={page}";
+            }
+            
+            return baseUrl;
+        }
+
+        // Новые методы парсинга для дополнительных источников
+        private List<ProxyServer> ParseProxyVerity(HtmlAgilityPack.HtmlDocument doc, string source)
+        {
+            var proxies = new List<ProxyServer>();
+            
+            try
+            {
+                var rows = doc.DocumentNode.SelectNodes("//table//tr");
+                if (rows != null)
+                {
+                    foreach (var row in rows.Skip(1)) // Пропускаем заголовок
+                    {
+                        var cells = row.SelectNodes(".//td");
+                        if (cells != null && cells.Count >= 4)
+                        {
+                            var ip = cells[0].InnerText.Trim();
+                            var portText = cells[1].InnerText.Trim();
+                            var country = cells[2].InnerText.Trim();
+                            var protocol = cells[3].InnerText.Trim().ToUpper();
+
+                            if (int.TryParse(portText, out int port))
+                            {
+                                var proxy = new ProxyServer
+                                {
+                                    IpAddress = ip,
+                                    Port = port,
+                                    Country = country,
+                                    Type = ParseProxyType(protocol),
+                                    Source = source,
+                                    LastChecked = DateTime.Now
+                                };
+                                proxies.Add(proxy);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"Ошибка при парсинге ProxyVerity: {ex.Message}");
+            }
+
+            return proxies;
+        }
+
+        private List<ProxyServer> ParseProxyTools(HtmlAgilityPack.HtmlDocument doc, string source)
+        {
+            var proxies = new List<ProxyServer>();
+            
+            try
+            {
+                var rows = doc.DocumentNode.SelectNodes("//table//tr");
+                if (rows != null)
+                {
+                    foreach (var row in rows.Skip(1)) // Пропускаем заголовок
+                    {
+                        var cells = row.SelectNodes(".//td");
+                        if (cells != null && cells.Count >= 3)
+                        {
+                            var ip = cells[0].InnerText.Trim();
+                            var portText = cells[1].InnerText.Trim();
+                            var protocol = cells[2].InnerText.Trim().ToUpper();
+
+                            if (int.TryParse(portText, out int port))
+                            {
+                                var proxy = new ProxyServer
+                                {
+                                    IpAddress = ip,
+                                    Port = port,
+                                    Type = ParseProxyType(protocol),
+                                    Source = source,
+                                    LastChecked = DateTime.Now
+                                };
+                                proxies.Add(proxy);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"Ошибка при парсинге ProxyTools: {ex.Message}");
+            }
+
+            return proxies;
+        }
+
+        private List<ProxyServer> ParseHtmlWeb(HtmlAgilityPack.HtmlDocument doc, string source)
+        {
+            var proxies = new List<ProxyServer>();
+            
+            try
+            {
+                var rows = doc.DocumentNode.SelectNodes("//table//tr");
+                if (rows != null)
+                {
+                    foreach (var row in rows.Skip(1)) // Пропускаем заголовок
+                    {
+                        var cells = row.SelectNodes(".//td");
+                        if (cells != null && cells.Count >= 2)
+                        {
+                            var ipPort = cells[0].InnerText.Trim();
+                            var protocol = cells[1].InnerText.Trim().ToUpper();
+
+                            var parts = ipPort.Split(':');
+                            if (parts.Length == 2 && int.TryParse(parts[1], out int port))
+                            {
+                                var proxy = new ProxyServer
+                                {
+                                    IpAddress = parts[0],
+                                    Port = port,
+                                    Type = ParseProxyType(protocol),
+                                    Source = source,
+                                    LastChecked = DateTime.Now
+                                };
+                                proxies.Add(proxy);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"Ошибка при парсинге HtmlWeb: {ex.Message}");
+            }
+
+            return proxies;
+        }
+
+        private List<ProxyServer> ParseGeonix(HtmlAgilityPack.HtmlDocument doc, string source)
+        {
+            var proxies = new List<ProxyServer>();
+            
+            try
+            {
+                var rows = doc.DocumentNode.SelectNodes("//table//tr");
+                if (rows != null)
+                {
+                    foreach (var row in rows.Skip(1)) // Пропускаем заголовок
+                    {
+                        var cells = row.SelectNodes(".//td");
+                        if (cells != null && cells.Count >= 3)
+                        {
+                            var ip = cells[0].InnerText.Trim();
+                            var portText = cells[1].InnerText.Trim();
+                            var protocol = cells[2].InnerText.Trim().ToUpper();
+
+                            if (int.TryParse(portText, out int port))
+                            {
+                                var proxy = new ProxyServer
+                                {
+                                    IpAddress = ip,
+                                    Port = port,
+                                    Type = ParseProxyType(protocol),
+                                    Source = source,
+                                    LastChecked = DateTime.Now
+                                };
+                                proxies.Add(proxy);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage?.Invoke($"Ошибка при парсинге Geonix: {ex.Message}");
+            }
+
+            return proxies;
         }
 
         public void Dispose()

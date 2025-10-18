@@ -70,6 +70,7 @@ namespace ProxyCollector
             this.txtActionLog = new TextBox();
             this.lblActionLog = new Label();
             this.btnClearLog = new Button();
+            this.splitContainer = new SplitContainer();
             this.menuStrip = new MenuStrip();
             this.fileToolStripMenuItem = new ToolStripMenuItem();
             this.exportToolStripMenuItem = new ToolStripMenuItem();
@@ -86,9 +87,8 @@ namespace ProxyCollector
             this.AutoScaleDimensions = new SizeF(8F, 16F);
             this.AutoScaleMode = AutoScaleMode.Font;
             this.ClientSize = new Size(1400, 700);
-            this.Controls.Add(this.dataGridViewProxies);
+            this.Controls.Add(this.splitContainer);
             this.Controls.Add(this.panelControls);
-            this.Controls.Add(this.panelLog);
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
@@ -96,12 +96,23 @@ namespace ProxyCollector
             this.WindowState = FormWindowState.Normal;
             this.Resize += MainForm_Resize;
 
+            // SplitContainer
+            this.splitContainer.Dock = DockStyle.Fill;
+            this.splitContainer.Location = new Point(0, 200);
+            this.splitContainer.Name = "splitContainer";
+            this.splitContainer.Orientation = Orientation.Vertical;
+            this.splitContainer.Panel1.Controls.Add(this.dataGridViewProxies);
+            this.splitContainer.Panel2.Controls.Add(this.panelLog);
+            this.splitContainer.Size = new Size(1400, 500);
+            this.splitContainer.SplitterDistance = 1000;
+            this.splitContainer.TabIndex = 0;
+
             // DataGridView
             this.dataGridViewProxies.AllowUserToAddRows = false;
             this.dataGridViewProxies.AllowUserToDeleteRows = false;
             this.dataGridViewProxies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridViewProxies.Dock = DockStyle.Fill;
-            this.dataGridViewProxies.Location = new Point(0, 200);
+            this.dataGridViewProxies.Location = new Point(0, 0);
             this.dataGridViewProxies.Name = "dataGridViewProxies";
             this.dataGridViewProxies.ReadOnly = true;
             this.dataGridViewProxies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
@@ -238,8 +249,7 @@ namespace ProxyCollector
 
             // Panel Log
             this.panelLog = new Panel();
-            this.panelLog.Dock = DockStyle.Right;
-            this.panelLog.Width = 400;
+            this.panelLog.Dock = DockStyle.Fill;
             this.panelLog.Controls.Add(this.lblActionLog);
             this.panelLog.Controls.Add(this.txtActionLog);
             this.panelLog.Controls.Add(this.btnClearLog);
@@ -251,16 +261,18 @@ namespace ProxyCollector
             this.lblActionLog.Text = "Журнал действий:";
 
             // TextBox Action Log
+            this.txtActionLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             this.txtActionLog.Location = new Point(10, 35);
             this.txtActionLog.Name = "txtActionLog";
-            this.txtActionLog.Size = new Size(380, 600);
+            this.txtActionLog.Size = new Size(380, 420);
             this.txtActionLog.Multiline = true;
             this.txtActionLog.ScrollBars = ScrollBars.Vertical;
             this.txtActionLog.ReadOnly = true;
             this.txtActionLog.Font = new Font("Consolas", 9F);
 
             // Button Clear Log
-            this.btnClearLog.Location = new Point(10, 640);
+            this.btnClearLog.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            this.btnClearLog.Location = new Point(10, 460);
             this.btnClearLog.Name = "btnClearLog";
             this.btnClearLog.Size = new Size(100, 25);
             this.btnClearLog.Text = "Очистить лог";
@@ -689,11 +701,12 @@ namespace ProxyCollector
 
         private void MainForm_Resize(object sender, EventArgs e)
         {
-            if (WindowState == FormWindowState.Minimized && backgroundModeToolStripMenuItem.Checked)
+            if (WindowState == FormWindowState.Minimized)
             {
                 Hide();
                 _trayIcon.Visible = true;
                 _isMinimizedToTray = true;
+                LogAction("Программа минимизирована в трей");
             }
         }
 
@@ -703,6 +716,7 @@ namespace ProxyCollector
             WindowState = FormWindowState.Normal;
             _trayIcon.Visible = false;
             _isMinimizedToTray = false;
+            LogAction("Программа восстановлена из трея");
         }
 
         private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -750,6 +764,7 @@ namespace ProxyCollector
         private TextBox txtActionLog;
         private Label lblActionLog;
         private Button btnClearLog;
+        private SplitContainer splitContainer;
         private MenuStrip menuStrip;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem exportToolStripMenuItem;

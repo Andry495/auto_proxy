@@ -31,25 +31,51 @@ namespace ProxyCollector.Services
         public async Task<List<ProxyServer>> ParseAllSourcesAsync()
         {
             var allProxies = new List<ProxyServer>();
+            var startTime = DateTime.Now;
             LogMessage?.Invoke($"Начало парсинга с {_proxySources.Count} источников");
             
-            foreach (var source in _proxySources)
+            for (int i = 0; i < _proxySources.Count; i++)
             {
+                var source = _proxySources[i];
+                var sourceStartTime = DateTime.Now;
+                
                 try
                 {
+                    LogMessage?.Invoke($"Источник {i + 1}/{_proxySources.Count}: {source}");
                     LogMessage?.Invoke($"Подключение к {source}...");
+                    
                     var proxies = await ParseSourceAsync(source);
-                    LogMessage?.Invoke($"Получено {proxies.Count} прокси с {source}");
+                    var sourceDuration = (int)(DateTime.Now - sourceStartTime).TotalMilliseconds;
+                    
+                    LogMessage?.Invoke($"Получено {proxies.Count} прокси с {source} за {sourceDuration}мс");
+                    
+                    if (proxies.Count > 0)
+                    {
+                        var proxyTypes = proxies.GroupBy(p => p.Type).ToDictionary(g => g.Key, g => g.Count());
+                        var typeInfo = string.Join(", ", proxyTypes.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+                        LogMessage?.Invoke($"Типы прокси: {typeInfo}");
+                    }
+                    
                     allProxies.AddRange(proxies);
                 }
                 catch (Exception ex)
                 {
-                    LogMessage?.Invoke($"Ошибка при парсинге {source}: {ex.Message}");
+                    var sourceDuration = (int)(DateTime.Now - sourceStartTime).TotalMilliseconds;
+                    LogMessage?.Invoke($"Ошибка при парсинге {source} за {sourceDuration}мс: {ex.Message}");
                     Console.WriteLine($"Ошибка при парсинге {source}: {ex.Message}");
                 }
             }
-
-            LogMessage?.Invoke($"Парсинг завершен. Всего получено {allProxies.Count} прокси");
+            
+            var totalDuration = (int)(DateTime.Now - startTime).TotalMilliseconds;
+            LogMessage?.Invoke($"Парсинг завершен за {totalDuration}мс. Всего получено: {allProxies.Count} прокси");
+            
+            if (allProxies.Count > 0)
+            {
+                var totalTypes = allProxies.GroupBy(p => p.Type).ToDictionary(g => g.Key, g => g.Count());
+                var totalTypeInfo = string.Join(", ", totalTypes.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+                LogMessage?.Invoke($"Общая статистика: {totalTypeInfo}");
+            }
+            
             return allProxies;
         }
 
@@ -69,22 +95,30 @@ namespace ProxyCollector.Services
                 if (url.Contains("hide-my-name.com"))
                 {
                     LogMessage?.Invoke("Парсинг hide-my-name.com...");
-                    proxies.AddRange(ParseHideMyName(doc, url));
+                    var parsedProxies = ParseHideMyName(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на hide-my-name.com");
+                    proxies.AddRange(parsedProxies);
                 }
                 else if (url.Contains("proxyscrape.com"))
                 {
                     LogMessage?.Invoke("Парсинг proxyscrape.com...");
-                    proxies.AddRange(ParseProxyScrape(doc, url));
+                    var parsedProxies = ParseProxyScrape(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на proxyscrape.com");
+                    proxies.AddRange(parsedProxies);
                 }
                 else if (url.Contains("freeproxylist.ru"))
                 {
                     LogMessage?.Invoke("Парсинг freeproxylist.ru...");
-                    proxies.AddRange(ParseFreeProxyListRu(doc, url));
+                    var parsedProxies = ParseFreeProxyListRu(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на freeproxylist.ru");
+                    proxies.AddRange(parsedProxies);
                 }
                 else if (url.Contains("free-proxy-list.net"))
                 {
                     LogMessage?.Invoke("Парсинг free-proxy-list.net...");
-                    proxies.AddRange(ParseFreeProxyListNet(doc, url));
+                    var parsedProxies = ParseFreeProxyListNet(doc, url);
+                    LogMessage?.Invoke($"Найдено {parsedProxies.Count} прокси на free-proxy-list.net");
+                    proxies.AddRange(parsedProxies);
                 }
             }
             catch (Exception ex)

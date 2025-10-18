@@ -407,17 +407,34 @@ namespace ProxyCollector
         {
             try
             {
+                var startTime = DateTime.Now;
                 LogAction("Начало обновления прокси...");
                 
-                foreach (var proxy in _allProxies)
+                // Парсим новые прокси с сайтов
+                LogAction("Парсинг новых прокси с сайтов...");
+                var newProxies = await _proxyParser.ParseAllSourcesAsync();
+                
+                if (newProxies.Any())
                 {
-                    proxy.LastChecked = DateTime.Now;
+                    var beforeCount = _allProxies.Count;
+                    _allProxies.AddRange(newProxies);
+                    _allProxies = _allProxies.DistinctBy(p => new { p.IpAddress, p.Port }).ToList();
+                    var afterCount = _allProxies.Count;
+                    var addedCount = afterCount - beforeCount;
+                    
+                    LogAction($"Добавлено {addedCount} новых прокси (было: {beforeCount}, стало: {afterCount})");
+                }
+                else
+                {
+                    LogAction("Новые прокси не найдены");
                 }
 
                 LogAction("Сохранение прокси в файл...");
                 await _proxyStorage.SaveProxiesAsync(_allProxies);
                 UpdateDisplay();
-                LogAction($"Обновление завершено. Всего прокси: {_allProxies.Count}");
+                
+                var duration = (int)(DateTime.Now - startTime).TotalMilliseconds;
+                LogAction($"Обновление завершено за {duration}мс. Всего прокси: {_allProxies.Count}");
             }
             catch (Exception ex)
             {

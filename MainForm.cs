@@ -81,7 +81,7 @@ namespace ProxyCollector
 
         private void ProxyCheckTimer_Tick(object? sender, EventArgs e)
         {
-            if (_allProxies.Any())
+            if (_allProxies != null && _allProxies.Any())
             {
                 LogAction($"Проверка доступности {_allProxies.Count} прокси...");
                 _ = Task.Run(async () => await CheckAllProxies());
@@ -242,6 +242,9 @@ namespace ProxyCollector
 
         private void UpdateDisplay()
         {
+            if (_allProxies == null || dataGridViewProxies == null)
+                return;
+
             var sortedProxies = _allProxies
                 .OrderByDescending(p => p.IsAvailable)
                 .ThenBy(p => p.ResponseTime)
@@ -255,6 +258,9 @@ namespace ProxyCollector
         {
             try
             {
+                if (dataGridViewProxies == null || e.ColumnIndex < 0 || e.ColumnIndex >= dataGridViewProxies.Columns.Count)
+                    return;
+
                 var column = dataGridViewProxies.Columns[e.ColumnIndex];
                 var currentData = (List<ProxyServer>)dataGridViewProxies.DataSource;
                 
@@ -309,6 +315,9 @@ namespace ProxyCollector
         {
             try
             {
+                if (dataGridViewProxies == null || e.RowIndex < 0 || e.RowIndex >= dataGridViewProxies.Rows.Count)
+                    return;
+
                 if (dataGridViewProxies.Rows[e.RowIndex].DataBoundItem is ProxyServer proxy)
                 {
                     // Недоступные серверы - красный фон
@@ -472,6 +481,12 @@ namespace ProxyCollector
         {
             try
             {
+                if (_allProxies == null || !_allProxies.Any())
+                {
+                    LogAction("Нет прокси для проверки");
+                    return;
+                }
+
                 var progress = new Progress<ProxyCheckProgress>(progress =>
                 {
                     // Выделяем текущий проверяемый прокси
@@ -522,6 +537,9 @@ namespace ProxyCollector
         {
             try
             {
+                if (dataGridViewProxies == null || string.IsNullOrEmpty(proxyAddress))
+                    return;
+
                 if (dataGridViewProxies.InvokeRequired)
                 {
                     dataGridViewProxies.Invoke(new Action<string>(HighlightCurrentProxy), proxyAddress);
@@ -562,6 +580,9 @@ namespace ProxyCollector
         {
             try
             {
+                if (dataGridViewProxies == null)
+                    return;
+
                 if (dataGridViewProxies.InvokeRequired)
                 {
                     dataGridViewProxies.Invoke(new Action(ClearProxyHighlight));

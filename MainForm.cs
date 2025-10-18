@@ -129,11 +129,11 @@ namespace ProxyCollector
             this.dataGridViewProxies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
             this.dataGridViewProxies.ColumnHeadersHeight = 35;
             this.dataGridViewProxies.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            this.dataGridViewProxies.Location = new Point(0, 200);
+            this.dataGridViewProxies.Location = new Point(0, 120);
             this.dataGridViewProxies.Name = "dataGridViewProxies";
             this.dataGridViewProxies.ReadOnly = true;
             this.dataGridViewProxies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            this.dataGridViewProxies.Size = new Size(980, 480);
+            this.dataGridViewProxies.Size = new Size(1000, 560);
             this.dataGridViewProxies.TabIndex = 0;
             this.dataGridViewProxies.RowHeadersVisible = false;
             this.dataGridViewProxies.BackgroundColor = Color.White;
@@ -148,7 +148,7 @@ namespace ProxyCollector
             // Panel Controls
             this.panelControls = new Panel();
             this.panelControls.Dock = DockStyle.Top;
-            this.panelControls.Height = 200;
+            this.panelControls.Height = 120;
             this.panelControls.Controls.AddRange(new Control[] {
                 this.btnRefresh, this.btnParseNew, this.btnCheckAll, this.btnExport,
                 this.progressBar, this.lblStatus, this.lblTotalProxies, this.lblAvailableProxies,
@@ -278,8 +278,8 @@ namespace ProxyCollector
             this.panelLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
             this.panelLog.BorderStyle = BorderStyle.FixedSingle;
             this.panelLog.BackColor = Color.LightGray;
-            this.panelLog.Location = new Point(990, 200);
-            this.panelLog.Size = new Size(400, 480);
+            this.panelLog.Location = new Point(1010, 120);
+            this.panelLog.Size = new Size(380, 560);
             this.panelLog.Padding = new Padding(5);
             this.panelLog.Controls.Add(this.lblActionLog);
             this.panelLog.Controls.Add(this.txtActionLog);

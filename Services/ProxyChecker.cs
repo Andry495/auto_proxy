@@ -94,8 +94,11 @@ namespace ProxyCollector.Services
                 using var client = new HttpClient(handler);
                 client.Timeout = TimeSpan.FromSeconds(timeout);
 
+                // Адаптируем URL для тестирования в зависимости от типа прокси
+                var testUrlToUse = GetTestUrlForProxyType(proxy.Type, testUrl);
+                
                 // Тестируем подключение к настроенному URL
-                var response = await client.GetAsync(testUrl);
+                var response = await client.GetAsync(testUrlToUse);
                 
                 if (response.IsSuccessStatusCode)
                 {
@@ -126,13 +129,25 @@ namespace ProxyCollector.Services
             var proxyUri = proxy.Type switch
             {
                 ProxyType.HTTP => $"http://{proxy.IpAddress}:{proxy.Port}",
-                ProxyType.HTTPS => $"http://{proxy.IpAddress}:{proxy.Port}",
+                ProxyType.HTTPS => $"https://{proxy.IpAddress}:{proxy.Port}",
                 ProxyType.SOCKS4 => $"socks4://{proxy.IpAddress}:{proxy.Port}",
                 ProxyType.SOCKS5 => $"socks5://{proxy.IpAddress}:{proxy.Port}",
                 _ => $"http://{proxy.IpAddress}:{proxy.Port}"
             };
 
             return new WebProxy(proxyUri);
+        }
+
+        private string GetTestUrlForProxyType(ProxyType proxyType, string baseUrl)
+        {
+            return proxyType switch
+            {
+                ProxyType.HTTP => baseUrl.Replace("https://", "http://"),
+                ProxyType.HTTPS => baseUrl.Replace("http://", "https://"),
+                ProxyType.SOCKS4 => baseUrl, // SOCKS4/5 могут работать с любым протоколом
+                ProxyType.SOCKS5 => baseUrl,
+                _ => baseUrl
+            };
         }
 
         public async Task<bool> TestProxyConnection(ProxyServer proxy)
@@ -149,7 +164,10 @@ namespace ProxyCollector.Services
                 using var client = new HttpClient(handler);
                 client.Timeout = TimeSpan.FromSeconds(5);
 
-                var response = await client.GetAsync("http://httpbin.org/ip");
+                var testUrl = _settingsManager.GetStringSetting("TestUrl", "https://2ip.ru");
+                var testUrlToUse = GetTestUrlForProxyType(proxy.Type, testUrl);
+                
+                var response = await client.GetAsync(testUrlToUse);
                 return response.IsSuccessStatusCode;
             }
             catch

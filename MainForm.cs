@@ -57,6 +57,14 @@ namespace ProxyCollector
             // Загружаем настройки после инициализации всех контролов
             LoadSettings();
             
+            // Принудительно обновляем панель логов
+            this.panelLog.Refresh();
+            this.panelLog.Invalidate();
+            this.panelLog.Update();
+            
+            // Добавляем тестовое сообщение в панель логов
+            LogAction("Панель логов инициализирована");
+            
             LoadProxies();
         }
 
@@ -98,8 +106,8 @@ namespace ProxyCollector
             this.AutoScaleMode = AutoScaleMode.Font;
             this.ClientSize = new Size(1400, 700);
             this.Controls.Add(this.menuStrip);
-            this.Controls.Add(this.panelLog);
             this.Controls.Add(this.dataGridViewProxies);
+            this.Controls.Add(this.panelLog);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "Proxy Collector";
@@ -275,8 +283,8 @@ namespace ProxyCollector
             // Panel Log
             this.panelLog = new Panel();
             this.panelLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
-            this.panelLog.BorderStyle = BorderStyle.FixedSingle;
-            this.panelLog.BackColor = Color.LightBlue;
+            this.panelLog.BorderStyle = BorderStyle.Fixed3D;
+            this.panelLog.BackColor = Color.Yellow;
             this.panelLog.Visible = true;
             this.panelLog.Location = new Point(1010, 25);
             this.panelLog.Size = new Size(380, 655);

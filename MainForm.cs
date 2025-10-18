@@ -117,14 +117,16 @@ namespace ProxyCollector
             this.tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             this.tableLayoutPanel.Size = new Size(1400, 500);
             this.tableLayoutPanel.TabIndex = 0;
-            this.tableLayoutPanel.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
+            this.tableLayoutPanel.CellBorderStyle = TableLayoutPanelCellBorderStyle.None;
             this.tableLayoutPanel.BackColor = Color.White;
+            this.tableLayoutPanel.Margin = new Padding(0);
+            this.tableLayoutPanel.Padding = new Padding(0);
 
             // DataGridView
             this.dataGridViewProxies.AllowUserToAddRows = false;
             this.dataGridViewProxies.AllowUserToDeleteRows = false;
             this.dataGridViewProxies.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
-            this.dataGridViewProxies.ColumnHeadersHeight = 25;
+            this.dataGridViewProxies.ColumnHeadersHeight = 30;
             this.dataGridViewProxies.Dock = DockStyle.Fill;
             this.dataGridViewProxies.Location = new Point(0, 0);
             this.dataGridViewProxies.Name = "dataGridViewProxies";
@@ -136,6 +138,12 @@ namespace ProxyCollector
             this.dataGridViewProxies.BackgroundColor = Color.White;
             this.dataGridViewProxies.GridColor = Color.LightGray;
             this.dataGridViewProxies.BorderStyle = BorderStyle.Fixed3D;
+            this.dataGridViewProxies.ColumnHeadersVisible = true;
+            this.dataGridViewProxies.EnableHeadersVisualStyles = true;
+            this.dataGridViewProxies.ColumnHeadersDefaultCellStyle.BackColor = Color.LightBlue;
+            this.dataGridViewProxies.ColumnHeadersDefaultCellStyle.ForeColor = Color.DarkBlue;
+            this.dataGridViewProxies.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
+            this.dataGridViewProxies.Margin = new Padding(0, 0, 5, 0);
 
             // Panel Controls
             this.panelControls = new Panel();
@@ -270,6 +278,8 @@ namespace ProxyCollector
             this.panelLog.Dock = DockStyle.Fill;
             this.panelLog.BorderStyle = BorderStyle.FixedSingle;
             this.panelLog.BackColor = Color.LightGray;
+            this.panelLog.Margin = new Padding(5, 0, 0, 0);
+            this.panelLog.Padding = new Padding(5);
             this.panelLog.Controls.Add(this.lblActionLog);
             this.panelLog.Controls.Add(this.txtActionLog);
             this.panelLog.Controls.Add(this.btnClearLog);

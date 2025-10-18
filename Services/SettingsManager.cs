@@ -15,6 +15,12 @@ namespace ProxyCollector.Services
             _settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.txt");
             _settings = new Dictionary<string, string>();
             LoadSettings();
+            
+            // Если файл настроек не существует, создаем настройки по умолчанию
+            if (!File.Exists(_settingsPath))
+            {
+                SetDefaultSettings();
+            }
         }
 
         public void SetSetting(string key, string value)

@@ -11,6 +11,7 @@ namespace ProxyCollector.Services
 {
     public class ProxyParser
     {
+        public event Action<string>? LogMessage;
         private readonly HttpClient _httpClient;
         private readonly List<string> _proxySources = new()
         {
@@ -30,20 +31,25 @@ namespace ProxyCollector.Services
         public async Task<List<ProxyServer>> ParseAllSourcesAsync()
         {
             var allProxies = new List<ProxyServer>();
+            LogMessage?.Invoke($"Начало парсинга с {_proxySources.Count} источников");
             
             foreach (var source in _proxySources)
             {
                 try
                 {
+                    LogMessage?.Invoke($"Подключение к {source}...");
                     var proxies = await ParseSourceAsync(source);
+                    LogMessage?.Invoke($"Получено {proxies.Count} прокси с {source}");
                     allProxies.AddRange(proxies);
                 }
                 catch (Exception ex)
                 {
+                    LogMessage?.Invoke($"Ошибка при парсинге {source}: {ex.Message}");
                     Console.WriteLine($"Ошибка при парсинге {source}: {ex.Message}");
                 }
             }
 
+            LogMessage?.Invoke($"Парсинг завершен. Всего получено {allProxies.Count} прокси");
             return allProxies;
         }
 
@@ -53,24 +59,31 @@ namespace ProxyCollector.Services
             
             try
             {
+                LogMessage?.Invoke($"Загрузка HTML с {url}...");
                 var html = await _httpClient.GetStringAsync(url);
+                LogMessage?.Invoke($"HTML загружен, размер: {html.Length} символов");
+                
                 var doc = new HtmlAgilityPack.HtmlDocument();
                 doc.LoadHtml(html);
 
                 if (url.Contains("hide-my-name.com"))
                 {
+                    LogMessage?.Invoke("Парсинг hide-my-name.com...");
                     proxies.AddRange(ParseHideMyName(doc, url));
                 }
                 else if (url.Contains("proxyscrape.com"))
                 {
+                    LogMessage?.Invoke("Парсинг proxyscrape.com...");
                     proxies.AddRange(ParseProxyScrape(doc, url));
                 }
                 else if (url.Contains("freeproxylist.ru"))
                 {
+                    LogMessage?.Invoke("Парсинг freeproxylist.ru...");
                     proxies.AddRange(ParseFreeProxyListRu(doc, url));
                 }
                 else if (url.Contains("free-proxy-list.net"))
                 {
+                    LogMessage?.Invoke("Парсинг free-proxy-list.net...");
                     proxies.AddRange(ParseFreeProxyListNet(doc, url));
                 }
             }

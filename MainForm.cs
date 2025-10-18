@@ -30,6 +30,7 @@ namespace ProxyCollector
             InitializeComponent();
             
             _proxyParser = new ProxyParser();
+            _proxyParser.LogMessage += (message) => LogAction(message);
             _proxyChecker = new ProxyChecker();
             _proxyStorage = new ProxyStorage();
             _allProxies = new List<ProxyServer>();
@@ -70,7 +71,7 @@ namespace ProxyCollector
             this.txtActionLog = new TextBox();
             this.lblActionLog = new Label();
             this.btnClearLog = new Button();
-            this.splitContainer = new SplitContainer();
+            this.tableLayoutPanel = new TableLayoutPanel();
             this.menuStrip = new MenuStrip();
             this.fileToolStripMenuItem = new ToolStripMenuItem();
             this.exportToolStripMenuItem = new ToolStripMenuItem();
@@ -89,26 +90,26 @@ namespace ProxyCollector
             this.ClientSize = new Size(1400, 700);
             this.Controls.Add(this.menuStrip);
             this.Controls.Add(this.panelControls);
-            this.Controls.Add(this.splitContainer);
+            this.Controls.Add(this.tableLayoutPanel);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "Proxy Collector";
             this.WindowState = FormWindowState.Normal;
             this.Resize += MainForm_Resize;
 
-            // SplitContainer
-            this.splitContainer.Dock = DockStyle.Fill;
-            this.splitContainer.Location = new Point(0, 200);
-            this.splitContainer.Name = "splitContainer";
-            this.splitContainer.Orientation = Orientation.Vertical;
-            this.splitContainer.Panel1.Controls.Add(this.dataGridViewProxies);
-            this.splitContainer.Panel2.Controls.Add(this.panelLog);
-            this.splitContainer.Size = new Size(1400, 500);
-            this.splitContainer.SplitterDistance = 1000;
-            this.splitContainer.TabIndex = 0;
-            this.splitContainer.SplitterWidth = 5;
-            this.splitContainer.Panel1MinSize = 300;
-            this.splitContainer.Panel2MinSize = 300;
+            // TableLayoutPanel
+            this.tableLayoutPanel.Dock = DockStyle.Fill;
+            this.tableLayoutPanel.Location = new Point(0, 200);
+            this.tableLayoutPanel.Name = "tableLayoutPanel";
+            this.tableLayoutPanel.RowCount = 1;
+            this.tableLayoutPanel.ColumnCount = 2;
+            this.tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
+            this.tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
+            this.tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            this.tableLayoutPanel.Controls.Add(this.dataGridViewProxies, 0, 0);
+            this.tableLayoutPanel.Controls.Add(this.panelLog, 1, 0);
+            this.tableLayoutPanel.Size = new Size(1400, 500);
+            this.tableLayoutPanel.TabIndex = 0;
 
             // DataGridView
             this.dataGridViewProxies.AllowUserToAddRows = false;
@@ -769,7 +770,7 @@ namespace ProxyCollector
         private TextBox txtActionLog;
         private Label lblActionLog;
         private Button btnClearLog;
-        private SplitContainer splitContainer;
+        private TableLayoutPanel tableLayoutPanel;
         private MenuStrip menuStrip;
         private ToolStripMenuItem fileToolStripMenuItem;
         private ToolStripMenuItem exportToolStripMenuItem;

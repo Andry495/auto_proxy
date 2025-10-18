@@ -146,6 +146,7 @@ namespace ProxyCollector
             this.dataGridViewProxies.Size = new System.Drawing.Size(1000, 676);
             this.dataGridViewProxies.TabIndex = 0;
             this.dataGridViewProxies.ColumnHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.DataGridViewProxies_ColumnHeaderMouseClick);
+            this.dataGridViewProxies.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.DataGridViewProxies_CellFormatting);
             // 
             // panelLog
             // 

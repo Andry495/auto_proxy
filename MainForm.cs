@@ -271,6 +271,69 @@ namespace ProxyCollector
             }
         }
 
+        private void DataGridViewProxies_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            try
+            {
+                if (dataGridViewProxies.Rows[e.RowIndex].DataBoundItem is ProxyServer proxy)
+                {
+                    // Недоступные серверы - красный фон
+                    if (!proxy.IsAvailable)
+                    {
+                        e.CellStyle.BackColor = Color.LightCoral;
+                        e.CellStyle.ForeColor = Color.DarkRed;
+                        e.CellStyle.SelectionBackColor = Color.Red;
+                        e.CellStyle.SelectionForeColor = Color.White;
+                    }
+                    else
+                    {
+                        // Доступные серверы - градиент от зеленого к желтому в зависимости от скорости
+                        var responseTime = proxy.ResponseTime;
+                        
+                        if (responseTime <= 500) // Очень быстрые (0-500мс) - ярко-зеленый
+                        {
+                            e.CellStyle.BackColor = Color.LightGreen;
+                            e.CellStyle.ForeColor = Color.DarkGreen;
+                            e.CellStyle.SelectionBackColor = Color.Green;
+                            e.CellStyle.SelectionForeColor = Color.White;
+                        }
+                        else if (responseTime <= 1000) // Быстрые (500-1000мс) - зеленый
+                        {
+                            e.CellStyle.BackColor = Color.LightGreen;
+                            e.CellStyle.ForeColor = Color.DarkGreen;
+                            e.CellStyle.SelectionBackColor = Color.Green;
+                            e.CellStyle.SelectionForeColor = Color.White;
+                        }
+                        else if (responseTime <= 2000) // Средние (1000-2000мс) - желто-зеленый
+                        {
+                            e.CellStyle.BackColor = Color.LightYellow;
+                            e.CellStyle.ForeColor = Color.DarkGreen;
+                            e.CellStyle.SelectionBackColor = Color.Yellow;
+                            e.CellStyle.SelectionForeColor = Color.Black;
+                        }
+                        else if (responseTime <= 3000) // Медленные (2000-3000мс) - желтый
+                        {
+                            e.CellStyle.BackColor = Color.Yellow;
+                            e.CellStyle.ForeColor = Color.DarkOrange;
+                            e.CellStyle.SelectionBackColor = Color.Orange;
+                            e.CellStyle.SelectionForeColor = Color.White;
+                        }
+                        else // Очень медленные (3000мс+) - оранжевый
+                        {
+                            e.CellStyle.BackColor = Color.LightSalmon;
+                            e.CellStyle.ForeColor = Color.DarkRed;
+                            e.CellStyle.SelectionBackColor = Color.Orange;
+                            e.CellStyle.SelectionForeColor = Color.White;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при форматировании ячейки: {ex.Message}");
+            }
+        }
+
         private void LogAction(string message)
         {
             var timestamp = DateTime.Now.ToString("HH:mm:ss");

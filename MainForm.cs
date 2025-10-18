@@ -16,6 +16,7 @@ namespace ProxyCollector
         private readonly ProxyParser _proxyParser;
         private readonly ProxyChecker _proxyChecker;
         private readonly ProxyStorage _proxyStorage;
+        private readonly SettingsManager _settingsManager;
         private readonly System.Windows.Forms.Timer _refreshTimer;
         private readonly System.Windows.Forms.Timer _backgroundTimer;
         
@@ -33,21 +34,29 @@ namespace ProxyCollector
             _proxyParser.LogMessage += (message) => LogAction(message);
             _proxyChecker = new ProxyChecker();
             _proxyStorage = new ProxyStorage();
+            _settingsManager = new SettingsManager();
             _allProxies = new List<ProxyServer>();
             _actionLogs = new List<string>();
 
+            // Загрузка настроек
+            LoadSettings();
+
             // Настройка таймеров
             _refreshTimer = new System.Windows.Forms.Timer();
-            _refreshTimer.Interval = 30000; // 30 секунд
+            _refreshTimer.Interval = _settingsManager.GetIntSetting("RefreshInterval", 30) * 1000; // секунды в миллисекунды
             _refreshTimer.Tick += RefreshTimer_Tick;
 
             _backgroundTimer = new System.Windows.Forms.Timer();
-            _backgroundTimer.Interval = 300000; // 5 минут
+            _backgroundTimer.Interval = _settingsManager.GetIntSetting("BackgroundInterval", 300) * 1000; // секунды в миллисекунды
             _backgroundTimer.Tick += BackgroundTimer_Tick;
 
             SetupTrayIcon();
             InitializeDataGridView();
             LogAction("Программа запущена");
+            
+            // Добавляем тестовые данные для проверки отображения
+            AddTestData();
+            
             LoadProxies();
         }
 
@@ -106,9 +115,10 @@ namespace ProxyCollector
             this.tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
             this.tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
             this.tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            // Контролы будут добавлены в конце InitializeComponent
             this.tableLayoutPanel.Size = new Size(1400, 500);
             this.tableLayoutPanel.TabIndex = 0;
+            this.tableLayoutPanel.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
+            this.tableLayoutPanel.BackColor = Color.White;
 
             // DataGridView
             this.dataGridViewProxies.AllowUserToAddRows = false;
@@ -122,8 +132,10 @@ namespace ProxyCollector
             this.dataGridViewProxies.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             this.dataGridViewProxies.Size = new Size(1000, 500);
             this.dataGridViewProxies.TabIndex = 0;
-            // AutoSizeColumnsMode будет настроен в InitializeDataGridView
             this.dataGridViewProxies.RowHeadersVisible = false;
+            this.dataGridViewProxies.BackgroundColor = Color.White;
+            this.dataGridViewProxies.GridColor = Color.LightGray;
+            this.dataGridViewProxies.BorderStyle = BorderStyle.Fixed3D;
 
             // Panel Controls
             this.panelControls = new Panel();
@@ -267,6 +279,9 @@ namespace ProxyCollector
             this.lblActionLog.Name = "lblActionLog";
             this.lblActionLog.Size = new Size(380, 20);
             this.lblActionLog.Text = "Журнал действий:";
+            this.lblActionLog.Font = new Font("Microsoft Sans Serif", 9F, FontStyle.Bold);
+            this.lblActionLog.ForeColor = Color.DarkBlue;
+            this.lblActionLog.BackColor = Color.LightBlue;
 
             // TextBox Action Log
             this.txtActionLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
@@ -318,6 +333,84 @@ namespace ProxyCollector
             dataGridViewProxies.Columns["ResponseTime"].AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
             dataGridViewProxies.Columns["LastChecked"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             dataGridViewProxies.Columns["Source"].AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
+        }
+
+        private void AddTestData()
+        {
+            // Добавляем тестовые данные для проверки отображения
+            var testRow = new object[]
+            {
+                "192.168.1.1",
+                "8080",
+                "HTTP",
+                "Russia",
+                "150",
+                "Да",
+                "120",
+                DateTime.Now.ToString("dd.MM.yyyy HH:mm"),
+                "Test"
+            };
+            dataGridViewProxies.Rows.Add(testRow);
+            
+            var testRow2 = new object[]
+            {
+                "10.0.0.1",
+                "3128",
+                "SOCKS5",
+                "USA",
+                "200",
+                "Нет",
+                "N/A",
+                DateTime.Now.ToString("dd.MM.yyyy HH:mm"),
+                "Test"
+            };
+            dataGridViewProxies.Rows.Add(testRow2);
+        }
+
+        private void LoadSettings()
+        {
+            try
+            {
+                // Загружаем настройки автообновления
+                autoRefreshToolStripMenuItem.Checked = _settingsManager.GetBoolSetting("AutoRefresh", false);
+                _refreshTimer.Enabled = autoRefreshToolStripMenuItem.Checked;
+
+                // Загружаем настройки фонового режима
+                backgroundModeToolStripMenuItem.Checked = _settingsManager.GetBoolSetting("BackgroundMode", false);
+                _backgroundTimer.Enabled = backgroundModeToolStripMenuItem.Checked;
+
+                // Загружаем настройки минимизации в трей
+                var minimizeToTray = _settingsManager.GetBoolSetting("MinimizeToTray", true);
+                
+                LogAction("Настройки загружены из файла");
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при загрузке настроек: {ex.Message}");
+            }
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                // Сохраняем настройки автообновления
+                _settingsManager.SetBoolSetting("AutoRefresh", autoRefreshToolStripMenuItem.Checked);
+                _settingsManager.SetIntSetting("RefreshInterval", _refreshTimer.Interval / 1000);
+
+                // Сохраняем настройки фонового режима
+                _settingsManager.SetBoolSetting("BackgroundMode", backgroundModeToolStripMenuItem.Checked);
+                _settingsManager.SetIntSetting("BackgroundInterval", _backgroundTimer.Interval / 1000);
+
+                // Сохраняем настройки минимизации в трей
+                _settingsManager.SetBoolSetting("MinimizeToTray", true);
+
+                LogAction("Настройки сохранены в файл");
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при сохранении настроек: {ex.Message}");
+            }
         }
 
         private void SetupTrayIcon()
@@ -704,11 +797,13 @@ namespace ProxyCollector
         private void AutoRefreshToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
             _refreshTimer.Enabled = autoRefreshToolStripMenuItem.Checked;
+            SaveSettings();
         }
 
         private void BackgroundModeToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
         {
             _backgroundTimer.Enabled = backgroundModeToolStripMenuItem.Checked;
+            SaveSettings();
         }
 
         private void MainForm_Resize(object sender, EventArgs e)
@@ -749,6 +844,9 @@ namespace ProxyCollector
                 Hide();
                 return;
             }
+
+            // Сохраняем настройки при закрытии
+            SaveSettings();
 
             _proxyParser?.Dispose();
             _proxyChecker?.Dispose();

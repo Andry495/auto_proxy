@@ -106,8 +106,7 @@ namespace ProxyCollector
             this.tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 70F));
             this.tableLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 30F));
             this.tableLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            this.tableLayoutPanel.Controls.Add(this.dataGridViewProxies, 0, 0);
-            this.tableLayoutPanel.Controls.Add(this.panelLog, 1, 0);
+            // Контролы будут добавлены в конце InitializeComponent
             this.tableLayoutPanel.Size = new Size(1400, 500);
             this.tableLayoutPanel.TabIndex = 0;
 
@@ -283,6 +282,10 @@ namespace ProxyCollector
             this.btnClearLog.Size = new Size(100, 25);
             this.btnClearLog.Text = "Очистить лог";
             this.btnClearLog.Click += BtnClearLog_Click;
+
+            // Добавляем контролы в TableLayoutPanel после их инициализации
+            this.tableLayoutPanel.Controls.Add(this.dataGridViewProxies, 0, 0);
+            this.tableLayoutPanel.Controls.Add(this.panelLog, 1, 0);
 
             this.ResumeLayout(false);
             this.PerformLayout();

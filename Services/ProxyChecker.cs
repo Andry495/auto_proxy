@@ -48,8 +48,18 @@ namespace ProxyCollector.Services
             
             try
             {
+                // Отправляем информацию о начале проверки
+                progress?.Report(new ProxyCheckProgress
+                {
+                    Completed = completedCount,
+                    Total = totalCount,
+                    CurrentProxy = proxy.FullAddress,
+                    IsComplete = false
+                });
+
                 var result = await CheckProxyAsync(proxy);
                 
+                // Отправляем информацию о завершении проверки
                 progress?.Report(new ProxyCheckProgress
                 {
                     Completed = completedCount + 1,

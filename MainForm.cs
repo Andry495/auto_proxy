@@ -454,9 +454,16 @@ namespace ProxyCollector
             {
                 var progress = new Progress<ProxyCheckProgress>(progress =>
                 {
+                    // Выделяем текущий проверяемый прокси
+                    if (!string.IsNullOrEmpty(progress.CurrentProxy))
+                    {
+                        HighlightCurrentProxy(progress.CurrentProxy);
+                    }
+                    
                     if (progress.IsComplete)
                     {
                         LogAction($"Проверка завершена. Проверено: {progress.Completed}/{progress.Total}");
+                        ClearProxyHighlight();
                     }
                 });
 
@@ -472,6 +479,67 @@ namespace ProxyCollector
             catch (Exception ex)
             {
                 LogAction($"Ошибка при проверке прокси: {ex.Message}");
+                ClearProxyHighlight();
+            }
+        }
+
+        private void HighlightCurrentProxy(string proxyAddress)
+        {
+            try
+            {
+                if (dataGridViewProxies.InvokeRequired)
+                {
+                    dataGridViewProxies.Invoke(new Action<string>(HighlightCurrentProxy), proxyAddress);
+                    return;
+                }
+
+                // Очищаем предыдущее выделение
+                ClearProxyHighlight();
+
+                // Находим строку с текущим прокси
+                for (int i = 0; i < dataGridViewProxies.Rows.Count; i++)
+                {
+                    var row = dataGridViewProxies.Rows[i];
+                    if (row.DataBoundItem is ProxyServer proxy && proxy.FullAddress == proxyAddress)
+                    {
+                        // Выделяем строку
+                        row.Selected = true;
+                        row.DefaultCellStyle.BackColor = Color.LightBlue;
+                        row.DefaultCellStyle.SelectionBackColor = Color.DodgerBlue;
+                        row.DefaultCellStyle.SelectionForeColor = Color.White;
+                        
+                        // Прокручиваем к выделенной строке
+                        dataGridViewProxies.FirstDisplayedScrollingRowIndex = i;
+                        dataGridViewProxies.Refresh();
+                        
+                        LogAction($"Проверяется прокси: {proxyAddress}");
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при выделении прокси: {ex.Message}");
+            }
+        }
+
+        private void ClearProxyHighlight()
+        {
+            try
+            {
+                if (dataGridViewProxies.InvokeRequired)
+                {
+                    dataGridViewProxies.Invoke(new Action(ClearProxyHighlight));
+                    return;
+                }
+
+                // Очищаем выделение всех строк
+                dataGridViewProxies.ClearSelection();
+                dataGridViewProxies.Refresh();
+            }
+            catch (Exception ex)
+            {
+                LogAction($"Ошибка при очистке выделения: {ex.Message}");
             }
         }
 
